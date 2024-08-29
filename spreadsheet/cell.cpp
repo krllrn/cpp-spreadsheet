@@ -18,7 +18,7 @@ Cell::~Cell() {
 }
 
 void Cell::Clear() {
-    impl_.reset();
+    Set("");
 }
 
 void Cell::Set(std::string text) {

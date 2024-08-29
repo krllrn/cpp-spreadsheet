@@ -32,4 +32,5 @@ private:
     void IncreasePrintableSize(const Position& pos);
     void DecreasePrintableSize(const Position& pos);
     void FillLinks(std::unique_ptr<Cell>& main_cell);
+    bool IsValidCell(const Position& pos) const;
 };

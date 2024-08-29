@@ -23,6 +23,23 @@ inline std::ostream& operator<<(std::ostream& output, Position pos) {
     return output << "(" << pos.row << ", " << pos.col << ")";
 }
 
+void CheckPositionIsValid(const Position& pos) {
+    if (!pos.IsValid()) {
+        throw InvalidPositionException("Invalid position.");
+    }
+}
+
+bool Sheet::IsValidCell(const Position& pos) const {
+    if (sheet_.count(pos) == 0 || 
+        sheet_.at(pos) == nullptr || 
+        !(pos < Position{print_size_.rows, print_size_.cols})) 
+    {
+        return false;
+    }
+
+    return true;
+}
+
 void Sheet::FillLinks(std::unique_ptr<Cell>& main_cell) {
     auto ref_cells = main_cell->GetReferencedCells();
     if (ref_cells.size() > 0) {
@@ -36,9 +53,8 @@ void Sheet::FillLinks(std::unique_ptr<Cell>& main_cell) {
 }
 
 void Sheet::SetCell(Position pos, std::string text) {
-    if (!pos.IsValid()) {
-        throw InvalidPositionException("Invalid position.");
-    }
+    CheckPositionIsValid(pos);
+
     if (sheet_.count(pos) == 0) {
         sheet_[pos] = std::make_unique<Cell>(this);
     } else if (sheet_.at(pos)->IsReferenced()) {
@@ -61,29 +77,26 @@ void Sheet::SetCell(Position pos, std::string text) {
 }
 
 const CellInterface* Sheet::GetCell(Position pos) const {
-    if (!pos.IsValid()) {
-        throw InvalidPositionException("Invalid position.");
-    }
-    if (sheet_.count(pos) == 0 || sheet_.at(pos) == nullptr || !(pos < Position{print_size_.rows, print_size_.cols})) {
+    CheckPositionIsValid(pos);
+
+    if (!IsValidCell(pos)) {
         return nullptr;
     }
     return sheet_.at(pos).get();
 }
 
 CellInterface* Sheet::GetCell(Position pos) {
-    if (!pos.IsValid()) {
-        throw InvalidPositionException("Invalid position.");
-    }
-    if (sheet_.count(pos) == 0 || sheet_.at(pos) == nullptr || !(pos < Position{print_size_.rows, print_size_.cols})) {
+    CheckPositionIsValid(pos);
+
+    if (!IsValidCell(pos)) {
         return nullptr;
     }
     return sheet_.at(pos).get();
 }
 
 void Sheet::ClearCell(Position pos) {
-    if (!pos.IsValid()) {
-        throw InvalidPositionException("Invalid position.");
-    }
+    CheckPositionIsValid(pos);
+
     if (pos < Position{print_size_.rows, print_size_.cols} && sheet_.count(pos) != 0) {
         sheet_.at(pos)->Clear();
         sheet_.at(pos) = nullptr;
