@@ -14,6 +14,7 @@ struct Position {
     int col = 0;
 
     bool operator==(Position rhs) const;
+    
     bool operator<(Position rhs) const;
 
     bool IsValid() const;
@@ -24,6 +25,14 @@ struct Position {
     static const int MAX_ROWS = 16384;
     static const int MAX_COLS = 16384;
     static const Position NONE;
+
+    struct Hasher {
+        size_t operator()(const Position& pos) const;
+    };
+
+    struct EqualTo {
+        bool operator()(const Position& lhs, const Position& rhs) const;
+    };
 };
 
 struct Size {
@@ -39,7 +48,7 @@ public:
     enum class Category {
         Ref,    // ссылка на ячейку с некорректной позицией
         Value,  // ячейка не может быть трактована как число
-        Div0,  // в результате вычисления возникло деление на ноль
+        Arithmetic,  // некорректная арифметическая операция
     };
 
     FormulaError(Category category);
@@ -105,7 +114,7 @@ inline constexpr char ESCAPE_SIGN = '\'';
 // Интерфейс таблицы
 class SheetInterface {
 public:
-    virtual ~SheetInterface() = default;
+virtual ~SheetInterface() = default;
 
     // Задаёт содержимое ячейки. Если текст начинается со знака "=", то он
     // интерпретируется как формула. Если задаётся синтаксически некорректная

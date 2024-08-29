@@ -6,6 +6,7 @@
 
 #include <cassert>
 #include <cmath>
+#include <limits>
 #include <memory>
 #include <optional>
 #include <sstream>
@@ -72,7 +73,7 @@ public:
     virtual ~Expr() = default;
     virtual void Print(std::ostream& out) const = 0;
     virtual void DoPrintFormula(std::ostream& out, ExprPrecedence precedence) const = 0;
-    virtual double Evaluate(/*добавьте сюда нужные аргументы*/ args) const = 0;
+    virtual double Evaluate(const std::function<double(Position)> lmbd) const = 0;
 
     // higher is tighter
     virtual ExprPrecedence GetPrecedence() const = 0;
@@ -142,8 +143,71 @@ public:
         }
     }
 
-    double Evaluate(/*добавьте нужные аргументы*/) const override {
-			// Скопируйте ваше решение из предыдущих уроков.
+// Реализуйте метод Evaluate() для бинарных операций.
+// При делении на 0 выбрасывайте ошибку вычисления FormulaError
+    double Evaluate(const std::function<double(Position)> lmbd) const override {
+        double result = .0;
+        double lhs = lhs_->Evaluate(lmbd);
+        double rhs = rhs_->Evaluate(lmbd);
+        ASTImpl::ExprPrecedence precendence = GetPrecedence();
+
+        auto is_finite = [&](const double& lhs, const double& rhs, ASTImpl::ExprPrecedence& precendence) {
+            int is_finite;
+            switch (precendence)
+            {
+            case EP_ADD:
+                is_finite = std::isfinite(lhs + rhs);
+                if (!is_finite) 
+                {
+                    throw FormulaError(FormulaError::Category::Arithmetic);
+                } 
+                break;
+            case EP_SUB:
+                is_finite = std::isfinite(lhs - rhs);
+                if (!is_finite) 
+                {
+                    throw FormulaError(FormulaError::Category::Arithmetic);
+                } 
+                break;
+            case EP_MUL:
+                is_finite = std::isfinite(lhs + rhs);
+                if (!is_finite) 
+                {
+                    throw FormulaError(FormulaError::Category::Arithmetic);
+                } 
+                break;
+            case EP_DIV:
+                is_finite = std::isfinite(lhs / rhs);
+                if (!is_finite) 
+                {
+                    throw FormulaError(FormulaError::Category::Arithmetic);
+                } 
+                break;    
+            default:
+                break;
+            }
+        };
+
+        is_finite(lhs, rhs, precendence);
+        
+        switch (precendence)
+        {
+        case EP_ADD:
+            result = lhs + rhs + .0;
+            break;
+        case EP_SUB:
+            result = lhs - rhs - .0;
+            break;
+        case EP_MUL:
+            result = lhs * rhs * 1.0;
+            break;
+        case EP_DIV:
+            result = lhs / rhs;
+            break;    
+        default:
+            break;
+        }
+        return result;
     }
 
 private:
@@ -180,8 +244,21 @@ public:
         return EP_UNARY;
     }
 
-    double Evaluate(/*добавьте нужные аргументы*/ args) const override {
-        // Скопируйте ваше решение из предыдущих уроков.
+// Реализуйте метод Evaluate() для унарных операций.
+    double Evaluate(const std::function<double(Position)> lmbd) const override {
+        double result = .0;
+        switch (type_)
+        {
+        case UnaryPlus:
+            result = operand_->Evaluate(lmbd);
+            break;
+        case UnaryMinus:
+            result = -(operand_->Evaluate(lmbd));
+            break;
+        default:
+            break;
+        }
+        return result;
     }
 
 private:
@@ -211,8 +288,11 @@ public:
         return EP_ATOM;
     }
 
-    double Evaluate(/*добавьте нужные аргументы*/ args) const override {
-        // реализуйте метод.
+    double Evaluate(const std::function<double(Position)> lmbd) const override {
+        if (!cell_->IsValid()) {
+            throw FormulaError(FormulaError::Category::Ref);
+        }
+        return lmbd(*cell_);
     }
 
 private:
@@ -237,7 +317,8 @@ public:
         return EP_ATOM;
     }
 
-    double Evaluate(/*добавьте нужные аргументы*/ args) const override {
+    // Для чисел метод возвращает значение числа.
+    double Evaluate(const std::function<double(Position)> lmbd) const override {
         return value_;
     }
 
@@ -368,7 +449,7 @@ FormulaAST ParseFormulaAST(std::istream& in) {
     tree::ParseTree* tree = parser.main();
     ASTImpl::ParseASTListener listener;
     tree::ParseTreeWalker::DEFAULT.walk(&listener, tree);
-
+    
     return FormulaAST(listener.MoveRoot(), listener.MoveCells());
 }
 
@@ -391,8 +472,8 @@ void FormulaAST::PrintFormula(std::ostream& out) const {
     root_expr_->PrintFormula(out, ASTImpl::EP_ATOM);
 }
 
-double FormulaAST::Execute(/*добавьте нужные аргументы*/ args) const {
-    return root_expr_->Evaluate(/*добавьте нужные аргументы*/ args);
+double FormulaAST::Execute(const std::function<double(Position)> lmbd) const {
+    return root_expr_->Evaluate(lmbd);
 }
 
 FormulaAST::FormulaAST(std::unique_ptr<ASTImpl::Expr> root_expr, std::forward_list<Position> cells)
