@@ -159,7 +159,7 @@ Cell::TextImpl::TextImpl(std::string text)
 
 Cell::Value Cell::TextImpl::GetValue() const
 {
-    return text_[0] == '\'' ? text_.substr(1, text_.size()) : text_;
+    return text_[0] == ESCAPE_SIGN ? text_.substr(1, text_.size()) : text_;
 }
 
 std::string Cell::TextImpl::GetText() const
@@ -181,7 +181,7 @@ Cell::FormulaImpl::FormulaImpl(SheetInterface* sheet, std::string text)
 : formula_(ParseFormula(text.substr(1, text.size()))),
 sheet_(sheet)
 {
-    text_ = "=" + formula_->GetExpression();
+    text_ = FORMULA_SIGN + formula_->GetExpression();
 }
 
 Cell::Value Cell::FormulaImpl::GetValue() const
@@ -209,7 +209,7 @@ std::vector<Position> Cell::FormulaImpl::GetReferencedCells() const
 }
 
 Cell::CellType Cell::GetCellType(std::string_view text) {
-    if (text[0] == '=' && text.size() > 1) {
+    if (text[0] == FORMULA_SIGN && text.size() > 1) {
         return Cell::CellType::FORMULA;
     } else if (!text.empty()) {
         return Cell::CellType::TEXT;

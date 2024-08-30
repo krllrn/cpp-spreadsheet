@@ -151,45 +151,6 @@ public:
         double rhs = rhs_->Evaluate(lmbd);
         ASTImpl::ExprPrecedence precendence = GetPrecedence();
 
-        auto is_finite = [&](const double& lhs, const double& rhs, ASTImpl::ExprPrecedence& precendence) {
-            int is_finite;
-            switch (precendence)
-            {
-            case EP_ADD:
-                is_finite = std::isfinite(lhs + rhs);
-                if (!is_finite) 
-                {
-                    throw FormulaError(FormulaError::Category::Arithmetic);
-                } 
-                break;
-            case EP_SUB:
-                is_finite = std::isfinite(lhs - rhs);
-                if (!is_finite) 
-                {
-                    throw FormulaError(FormulaError::Category::Arithmetic);
-                } 
-                break;
-            case EP_MUL:
-                is_finite = std::isfinite(lhs + rhs);
-                if (!is_finite) 
-                {
-                    throw FormulaError(FormulaError::Category::Arithmetic);
-                } 
-                break;
-            case EP_DIV:
-                is_finite = std::isfinite(lhs / rhs);
-                if (!is_finite) 
-                {
-                    throw FormulaError(FormulaError::Category::Arithmetic);
-                } 
-                break;    
-            default:
-                break;
-            }
-        };
-
-        is_finite(lhs, rhs, precendence);
-        
         switch (precendence)
         {
         case EP_ADD:
@@ -207,6 +168,10 @@ public:
         default:
             break;
         }
+        if (!std::isfinite(result)) 
+        {
+            throw FormulaError(FormulaError::Category::Arithmetic);
+        } 
         return result;
     }
 

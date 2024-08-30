@@ -30,8 +30,7 @@ void CheckPositionIsValid(const Position& pos) {
 }
 
 bool Sheet::IsValidCell(const Position& pos) const {
-    if (sheet_.count(pos) == 0 || 
-        sheet_.at(pos) == nullptr || 
+    if (sheet_.find(pos) == sheet_.end() || 
         !(pos < Position{print_size_.rows, print_size_.cols})) 
     {
         return false;
@@ -143,8 +142,8 @@ void Sheet::IncreasePrintableSize(const Position& pos)
 {
     ++row_none_empty_cells_[pos.row];
     ++col_none_empty_cells_[pos.col];
-    print_size_.rows = pos.row >= print_size_.rows ? pos.row + 1 : print_size_.rows;
-    print_size_.cols = pos.col >= print_size_.cols ? pos.col + 1 : print_size_.cols;
+    print_size_.rows = std::max(pos.row + 1, print_size_.rows);
+    print_size_.cols = std::max(pos.col + 1, print_size_.cols);
 }
 
 void Sheet::DecreasePrintableSize(const Position& pos)
